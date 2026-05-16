@@ -4,12 +4,14 @@ import { Search } from 'lucide-react'
 import type { MediaListEntry } from '@/lib/anilist/types'
 import { ALL_STATUSES, ALL_TABS, type ListTab } from '@/lib/media'
 import { sortEntries } from '@/lib/sort'
+import { groupEntriesByCompletedDate } from '@/lib/dateGroup'
 import { useAuth } from '@/hooks/useAuth'
 import { useMediaList } from '@/hooks/useMediaList'
 import { useListParams } from '@/hooks/useListParams'
 import { Header } from '@/components/Header'
 import { StatusTabs } from '@/components/StatusTabs'
 import { SortControl } from '@/components/SortControl'
+import { DateViewToggle } from '@/components/DateViewToggle'
 import { MediaGrid } from '@/components/MediaGrid'
 import { ListEditorModal } from '@/components/ListEditorModal'
 import { Input } from '@/components/ui/input'
@@ -27,7 +29,19 @@ function matchesSearch(entry: MediaListEntry, query: string): boolean {
 
 export function ListPage() {
   const { isAuthenticated } = useAuth()
-  const { type, tab, sort, setTab, setType, setSort, applyToAllTabs } = useListParams()
+  const {
+    type,
+    tab,
+    sort,
+    view,
+    compact,
+    setTab,
+    setType,
+    setSort,
+    setView,
+    setCompact,
+    applyToAllTabs,
+  } = useListParams()
   const { entries: allEntries, byStatus, isLoading, isError, refetch } = useMediaList(type)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -61,6 +75,11 @@ export function ListPage() {
     return q ? sorted.filter((e) => matchesSearch(e, q)) : sorted
   }, [tab, groups, byStatus, sort, search])
 
+  const dateGroups = useMemo(() => {
+    if (tab !== 'COMPLETED' || view === 'grid') return null
+    return groupEntriesByCompletedDate(entries, view)
+  }, [tab, view, entries])
+
   const editingEntry = useMemo(
     () => (editingId == null ? null : entries.find((e) => e.id === editingId) ?? null),
     [editingId, entries],
@@ -87,6 +106,14 @@ export function ListPage() {
                 className="pl-8 w-36 sm:w-44 h-8 text-sm"
               />
             </div>
+            {tab === 'COMPLETED' && (
+              <DateViewToggle
+                view={view}
+                compact={compact}
+                onViewChange={setView}
+                onCompactChange={setCompact}
+              />
+            )}
             <SortControl
               value={sort}
               type={type}
@@ -101,7 +128,14 @@ export function ListPage() {
         ) : isError ? (
           <ErrorState onRetry={() => refetch()} />
         ) : (
-          <MediaGrid entries={entries} type={type} onOpen={openEntry} groups={groups} />
+          <MediaGrid
+            entries={entries}
+            type={type}
+            onOpen={openEntry}
+            groups={groups}
+            dateGroups={dateGroups}
+            compact={compact}
+          />
         )}
       </main>
 

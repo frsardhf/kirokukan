@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { MediaType } from '@/lib/anilist/types'
 import {
@@ -10,6 +10,13 @@ import {
 } from '@/lib/media'
 import { DEFAULT_SORT_BY_TAB, SORT_KEYS, type SortKey } from '@/lib/sort'
 import { getStoredSort, setStoredSort, setStoredSortForAllTabs } from '@/lib/sortPrefs'
+import { isListView, type ListView } from '@/lib/dateGroup'
+import {
+  getStoredCompact,
+  getStoredView,
+  setStoredCompact,
+  setStoredView,
+} from '@/lib/viewPrefs'
 
 function isSortKey(v: string | null): v is SortKey {
   return !!v && (SORT_KEYS as string[]).includes(v)
@@ -29,6 +36,14 @@ export function useListParams() {
   const tab: ListTab = tabFromSlug(params.status) ?? 'ALL'
   const sortParam = search.get('sort')
   const sort: SortKey = resolveSort(type, tab, sortParam)
+  const viewParam = search.get('view')
+  const view: ListView = isListView(viewParam)
+    ? viewParam
+    : getStoredView(type) ?? 'grid'
+  const [compact, setCompactState] = useState(() => getStoredCompact(type))
+  useEffect(() => {
+    setCompactState(getStoredCompact(type))
+  }, [type])
 
   const setTab = useCallback(
     (next: ListTab) => {
@@ -63,5 +78,35 @@ export function useListParams() {
     setStoredSortForAllTabs(type, sort)
   }, [type, sort])
 
-  return { type, tab, sort, setTab, setType, setSort, applyToAllTabs }
+  const setView = useCallback(
+    (next: ListView) => {
+      setStoredView(type, next)
+      if (next === 'grid') search.delete('view')
+      else search.set('view', next)
+      setSearch(search, { replace: true })
+    },
+    [type, search, setSearch],
+  )
+
+  const setCompact = useCallback(
+    (next: boolean) => {
+      setStoredCompact(type, next)
+      setCompactState(next)
+    },
+    [type],
+  )
+
+  return {
+    type,
+    tab,
+    sort,
+    view,
+    compact,
+    setTab,
+    setType,
+    setSort,
+    setView,
+    setCompact,
+    applyToAllTabs,
+  }
 }
