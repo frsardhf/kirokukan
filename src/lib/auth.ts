@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'kiroku.anilist.token'
+const TOKEN_KEY = 'kirokukan.anilist.token'
 const CLIENT_ID = import.meta.env.VITE_ANILIST_CLIENT_ID as string | undefined
 
 export function getToken(): string | null {

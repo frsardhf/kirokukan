@@ -1,4 +1,4 @@
-# Kiroku (記録)
+# Kirokukan (記録館)
 
 > *Your personal anime archive.*
 

@@ -51,7 +51,7 @@ const persister = createAsyncStoragePersister({
     setItem: (key, value) => set(key, value),
     removeItem: (key) => del(key),
   },
-  key: 'kiroku-query-cache',
+  key: 'kirokukan-query-cache',
 })
 
 export default function App() {

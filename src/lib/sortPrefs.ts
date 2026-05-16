@@ -3,7 +3,7 @@ import { ALL_TABS, type ListTab } from '@/lib/media'
 import { SORT_KEYS, type SortKey } from '@/lib/sort'
 
 function key(type: MediaType, tab: ListTab) {
-  return `kiroku.sort.${type.toLowerCase()}.${tab.toLowerCase()}`
+  return `kirokukan.sort.${type.toLowerCase()}.${tab.toLowerCase()}`
 }
 
 function isSortKey(v: unknown): v is SortKey {

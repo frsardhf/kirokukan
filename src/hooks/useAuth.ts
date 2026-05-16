@@ -6,7 +6,7 @@ export function useAuth() {
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === null || e.key === 'kiroku.anilist.token') {
+      if (e.key === null || e.key === 'kirokukan.anilist.token') {
         setTokenState(getToken())
       }
     }

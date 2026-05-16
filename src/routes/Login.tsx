@@ -28,7 +28,7 @@ export function Login() {
             記
           </div>
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Kiroku</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">Kirokukan</h1>
             <p className="text-muted-foreground text-sm mt-1">Your personal anime archive.</p>
           </div>
         </div>

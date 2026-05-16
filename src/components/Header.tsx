@@ -39,7 +39,7 @@ export function Header({ type, onTypeChange }: HeaderProps) {
           <Link
             to={`/${mediaTypeSlug(type)}/list/all`}
             className="flex items-center gap-2.5 shrink-0"
-            aria-label="Kiroku home"
+            aria-label="Kirokukan home"
           >
             <div className={cn(
               'size-8 rounded-lg grid place-items-center text-base font-semibold transition-colors border',
@@ -49,7 +49,7 @@ export function Header({ type, onTypeChange }: HeaderProps) {
             )}>
               記
             </div>
-            <span className="text-lg font-semibold tracking-tight">Kiroku</span>
+            <span className="text-lg font-semibold tracking-tight">Kirokukan</span>
           </Link>
           <MediaTypeToggle value={type} onChange={onTypeChange} />
           <Link
