@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, ChevronLeft, ChevronRight, Loader2, Plus } from 'lucide-react'
+import { AlertTriangle, ChevronLeft, ChevronRight, ExternalLink, Loader2, Plus } from 'lucide-react'
 import type { MediaListEntry, MediaListStatus } from '@/lib/anilist/types'
 import { ALL_STATUSES, fuzzyDateRange, seasonLabel, statusLabel } from '@/lib/media'
 import {
@@ -145,9 +145,23 @@ export function MediaEditorModal({
     )
 
   const saveLabel = isNew ? 'Add to list' : 'Save'
+  const anilistUrl = entry
+    ? `https://anilist.co/${entry.media.type.toLowerCase()}/${entry.media.id}`
+    : null
   const footer = (
     <div className="flex items-center justify-between gap-2">
       {nav ? <NavHeader nav={nav} onNavigate={handleNavigate} /> : <span />}
+      {anilistUrl && (
+        <a
+          href={anilistUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          View on AniList
+          <ExternalLink className="size-3" />
+        </a>
+      )}
       <div className="flex items-center gap-2">
         <Button variant="ghost" onClick={onClose}>
           Close
