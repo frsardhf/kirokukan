@@ -6,16 +6,25 @@ import { cn } from '@/lib/utils'
 import { MediaCard } from '@/components/MediaCard'
 import type { DateGroup } from '@/lib/dateGroup'
 
-interface MediaGroup {
+interface FlatSection {
   status: MediaListStatus
+  kind: 'flat'
   entries: MediaListEntry[]
 }
+
+interface DatedSection {
+  status: MediaListStatus
+  kind: 'dated'
+  dateGroups: DateGroup[]
+}
+
+export type MediaSection = FlatSection | DatedSection
 
 interface MediaGridProps {
   entries: MediaListEntry[]
   type: MediaType
   onOpen: (entry: MediaListEntry) => void
-  groups?: MediaGroup[] | null
+  sections?: MediaSection[] | null
   dateGroups?: DateGroup[] | null
   compact?: boolean
 }
@@ -24,7 +33,7 @@ interface MediaGridProps {
 const GRID_CLASS =
   'grid gap-3 sm:gap-4 grid-cols-[repeat(auto-fill,minmax(140px,1fr))] sm:grid-cols-[repeat(auto-fill,minmax(160px,1fr))] md:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]'
 
-export function MediaGrid({ entries, type, onOpen, groups, dateGroups, compact = false }: MediaGridProps) {
+export function MediaGrid({ entries, type, onOpen, sections, dateGroups, compact = false }: MediaGridProps) {
   if (entries.length === 0) {
     return (
       <div className="py-24 text-center text-muted-foreground text-sm">
@@ -33,66 +42,77 @@ export function MediaGrid({ entries, type, onOpen, groups, dateGroups, compact =
     )
   }
 
+  // Completed tab: the whole list is date-grouped.
   if (dateGroups) {
-    if (compact) {
-      return <InlineBannerGrid dateGroups={dateGroups} type={type} onOpen={onOpen} />
-    }
-    return (
-      <div className={GRID_CLASS}>
-        {dateGroups.map((g, i) => (
-          <Fragment key={g.key}>
-            <div
-              className={cn(
-                'col-span-full flex items-baseline gap-2.5',
-                i > 0 && 'mt-4',
-              )}
-            >
-              <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
-                {g.label}
-              </h3>
-              <span className="text-xs font-medium text-muted-foreground tabular-nums">
-                {g.entries.length}
-              </span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-            {g.entries.map((entry) => (
-              <MediaCard key={entry.id} entry={entry} type={type} onOpen={onOpen} />
-            ))}
-          </Fragment>
-        ))}
-      </div>
+    return compact ? (
+      <InlineBannerGrid dateGroups={dateGroups} type={type} onOpen={onOpen} />
+    ) : (
+      <FullWidthDateGrid dateGroups={dateGroups} type={type} onOpen={onOpen} />
     )
   }
 
-  if (groups) {
+  // All tab: one block per status. The Completed block may be date-subdivided,
+  // honoring the same view/compact settings as the Completed tab.
+  if (sections) {
     return (
-      <div className={GRID_CLASS}>
-        {groups.map((group, i) => (
-          <Fragment key={group.status}>
-            <div
-              className={cn(
-                'col-span-full flex items-center gap-3',
-                i > 0 && 'mt-2',
-              )}
-            >
-              <span className={cn('text-xs font-semibold px-2.5 py-0.5 rounded-md', STATUS_BANNER_CLASS[group.status])}>
-                {statusLabel(group.status, type)}
+      <div className="space-y-6">
+        {sections.map((sec) => (
+          <section key={sec.status}>
+            <div className="flex items-center gap-3 mb-4">
+              <span className={cn('text-xs font-semibold px-2.5 py-0.5 rounded-md', STATUS_BANNER_CLASS[sec.status])}>
+                {statusLabel(sec.status, type)}
               </span>
               <div className="flex-1 h-px bg-border/40" />
             </div>
-            {group.entries.map((entry) => (
-              <MediaCard key={entry.id} entry={entry} type={type} onOpen={onOpen} />
-            ))}
-          </Fragment>
+            {sec.kind === 'flat' ? (
+              <FlatGrid entries={sec.entries} type={type} onOpen={onOpen} />
+            ) : compact ? (
+              <InlineBannerGrid dateGroups={sec.dateGroups} type={type} onOpen={onOpen} />
+            ) : (
+              <FullWidthDateGrid dateGroups={sec.dateGroups} type={type} onOpen={onOpen} />
+            )}
+          </section>
         ))}
       </div>
     )
   }
 
+  return <FlatGrid entries={entries} type={type} onOpen={onOpen} />
+}
+
+interface GridSliceProps {
+  type: MediaType
+  onOpen: (entry: MediaListEntry) => void
+}
+
+function FlatGrid({ entries, type, onOpen }: GridSliceProps & { entries: MediaListEntry[] }) {
   return (
     <div className={GRID_CLASS}>
       {entries.map((entry) => (
         <MediaCard key={entry.id} entry={entry} type={type} onOpen={onOpen} />
+      ))}
+    </div>
+  )
+}
+
+function FullWidthDateGrid({ dateGroups, type, onOpen }: GridSliceProps & { dateGroups: DateGroup[] }) {
+  return (
+    <div className={GRID_CLASS}>
+      {dateGroups.map((g, i) => (
+        <Fragment key={g.key}>
+          <div className={cn('col-span-full flex items-baseline gap-2.5', i > 0 && 'mt-4')}>
+            <h3 className="text-base sm:text-lg font-bold text-foreground tracking-tight">
+              {g.label}
+            </h3>
+            <span className="text-xs font-medium text-muted-foreground tabular-nums">
+              {g.entries.length}
+            </span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+          {g.entries.map((entry) => (
+            <MediaCard key={entry.id} entry={entry} type={type} onOpen={onOpen} />
+          ))}
+        </Fragment>
       ))}
     </div>
   )

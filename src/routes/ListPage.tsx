@@ -12,7 +12,7 @@ import { Header } from '@/components/Header'
 import { StatusTabs } from '@/components/StatusTabs'
 import { SortControl } from '@/components/SortControl'
 import { DateViewToggle } from '@/components/DateViewToggle'
-import { MediaGrid } from '@/components/MediaGrid'
+import { MediaGrid, type MediaSection } from '@/components/MediaGrid'
 import { ListEditorModal } from '@/components/ListEditorModal'
 import { BrowseEditorModal } from '@/components/BrowseEditorModal'
 import { ErrorState } from '@/components/ErrorState'
@@ -66,24 +66,39 @@ export function ListPage() {
     return c
   }, [byStatus, allEntries])
 
-  const groups = useMemo(() => {
+  const sections = useMemo<MediaSection[] | null>(() => {
     if (tab !== 'ALL') return null
     const q = search.trim()
-    return ALL_STATUSES
-      .map((s) => {
-        const sorted = sortEntries(byStatus[s] ?? [], sort)
-        const entries = q ? sorted.filter((e) => matchesSearch(e, q)) : sorted
-        return { status: s, entries }
-      })
-      .filter((g) => g.entries.length > 0)
-  }, [tab, byStatus, sort, search])
+    const out: MediaSection[] = []
+    for (const s of ALL_STATUSES) {
+      const sorted = sortEntries(byStatus[s] ?? [], sort)
+      const filtered = q ? sorted.filter((e) => matchesSearch(e, q)) : sorted
+      if (filtered.length === 0) continue
+      // Mirror the Completed tab: date-subdivide the Completed block when a
+      // month/year view is active. Other statuses stay flat.
+      if (s === 'COMPLETED' && view !== 'grid') {
+        out.push({ status: s, kind: 'dated', dateGroups: groupEntriesByCompletedDate(filtered, view) })
+      } else {
+        out.push({ status: s, kind: 'flat', entries: filtered })
+      }
+    }
+    return out
+  }, [tab, byStatus, sort, search, view])
 
   const entries = useMemo(() => {
-    if (tab === 'ALL') return groups?.flatMap((g) => g.entries) ?? []
+    if (tab === 'ALL') {
+      // Flatten in render order so editor arrow-nav and the "1/N" counter
+      // match what's on screen (the Completed block reorders when dated).
+      return (
+        sections?.flatMap((sec) =>
+          sec.kind === 'flat' ? sec.entries : sec.dateGroups.flatMap((g) => g.entries),
+        ) ?? []
+      )
+    }
     const sorted = sortEntries(byStatus[tab] ?? [], sort)
     const q = search.trim()
     return q ? sorted.filter((e) => matchesSearch(e, q)) : sorted
-  }, [tab, groups, byStatus, sort, search])
+  }, [tab, sections, byStatus, sort, search])
 
   const dateGroups = useMemo(() => {
     if (tab !== 'COMPLETED' || view === 'grid') return null
@@ -178,7 +193,7 @@ export function ListPage() {
             entries={entries}
             type={type}
             onOpen={openEntry}
-            groups={groups}
+            sections={sections}
             dateGroups={dateGroups}
             compact={compact}
           />
