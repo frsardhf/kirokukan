@@ -1,12 +1,16 @@
 import { useMemo } from 'react'
-import type { BrowseMedia } from '@/lib/anilist/types'
+import type { MediaType } from '@/lib/anilist/types'
 import { draftEntry } from '@/lib/entryForm'
 import { useMediaWithEntry } from '@/hooks/useMediaWithEntry'
 import { MediaEditorModal, type MediaEditorNav } from '@/components/MediaEditorModal'
 
+// Only id + type are read for fetching and prev/next nav, so any media-like
+// shape works (BrowseMedia from browse grids, Media from a user's list).
+type NavItem = { id: number; type: MediaType }
+
 interface BrowseEditorModalProps {
   mediaId: number | null
-  navList: BrowseMedia[]
+  navList: NavItem[]
   onNavigate: (id: number) => void
   onClose: () => void
 }

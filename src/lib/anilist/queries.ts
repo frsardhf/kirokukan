@@ -227,8 +227,8 @@ export const MEDIA_SEARCH_QUERY = gql`
 `
 
 export const MEDIA_LIST_COLLECTION_QUERY = gql`
-  query MediaListCollection($userId: Int!, $type: MediaType!) {
-    MediaListCollection(userId: $userId, type: $type) {
+  query MediaListCollection($userId: Int, $userName: String, $type: MediaType!) {
+    MediaListCollection(userId: $userId, userName: $userName, type: $type) {
       lists {
         name
         status

@@ -27,11 +27,18 @@ function resolveSort(type: MediaType, tab: ListTab, urlSort: string | null): Sor
   return getStoredSort(type, tab) ?? DEFAULT_SORT_BY_TAB[tab]
 }
 
+function listBasePath(type: MediaType, username: string | undefined): string {
+  return username
+    ? `/${mediaTypeSlug(type)}/user/${username}/list`
+    : `/${mediaTypeSlug(type)}/list`
+}
+
 export function useListParams() {
-  const params = useParams<{ type?: string; status?: string }>()
+  const params = useParams<{ type?: string; status?: string; username?: string }>()
   const [search, setSearch] = useSearchParams()
   const navigate = useNavigate()
 
+  const username = params.username
   const type: MediaType = mediaTypeFromSlug(params.type) ?? 'ANIME'
   const tab: ListTab = tabFromSlug(params.status) ?? 'ALL'
   const sortParam = search.get('sort')
@@ -48,21 +55,21 @@ export function useListParams() {
   const setTab = useCallback(
     (next: ListTab) => {
       navigate({
-        pathname: `/${mediaTypeSlug(type)}/list/${tabSlug(next)}`,
+        pathname: `${listBasePath(type, username)}/${tabSlug(next)}`,
         search: '',
       })
     },
-    [navigate, type],
+    [navigate, type, username],
   )
 
   const setType = useCallback(
     (next: MediaType) => {
       navigate({
-        pathname: `/${mediaTypeSlug(next)}/list/${tabSlug(tab)}`,
+        pathname: `${listBasePath(next, username)}/${tabSlug(tab)}`,
         search: '',
       })
     },
-    [navigate, tab],
+    [navigate, tab, username],
   )
 
   const setSort = useCallback(
@@ -97,6 +104,7 @@ export function useListParams() {
   )
 
   return {
+    username,
     type,
     tab,
     sort,

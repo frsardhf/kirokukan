@@ -45,19 +45,24 @@ function groupByStatus(entries: MediaListEntry[]): Record<MediaListStatus, Media
   return groups
 }
 
-export function useMediaList(type: MediaType) {
+export function useMediaList(type: MediaType, userName?: string) {
   const { data: viewer } = useViewer()
   const userId = viewer?.id
+  const byName = !!userName
 
   const query = useQuery({
-    queryKey: [...MEDIA_LIST_KEY, type, userId],
-    enabled: !!userId,
+    // Other users' lists are keyed by name; your own list is keyed by viewer id.
+    queryKey: byName
+      ? [...MEDIA_LIST_KEY, type, 'user', userName]
+      : [...MEDIA_LIST_KEY, type, userId],
+    // A public list by name needs no auth; your own needs a resolved viewer id.
+    enabled: byName || !!userId,
     staleTime: 1000 * 60,
     queryFn: async () => {
-      const data = await anilistRequest<Response>(MEDIA_LIST_COLLECTION_QUERY, {
-        userId,
-        type,
-      })
+      const data = await anilistRequest<Response>(
+        MEDIA_LIST_COLLECTION_QUERY,
+        byName ? { userName, type } : { userId, type },
+      )
       return data.MediaListCollection
     },
   })

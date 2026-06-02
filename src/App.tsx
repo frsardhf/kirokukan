@@ -89,6 +89,7 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/:type/list/:status" element={<ListPage />} />
+      <Route path="/:type/user/:username/list/:status" element={<ListPage />} />
       <Route path="/:type/browse" element={<BrowsePage />} />
       <Route path="/:type/browse/search" element={<BrowseFilterPage />} />
       <Route path="/:type/browse/:section" element={<BrowseSectionPage />} />

@@ -9,6 +9,7 @@ import { BrowseSection } from '@/components/BrowseSection'
 import { Top100Grid } from '@/components/Top100Grid'
 import { BrowseEditorModal } from '@/components/BrowseEditorModal'
 import { ErrorState } from '@/components/ErrorState'
+import { UserListSearch } from '@/components/UserListSearch'
 
 interface EditorCtx {
   mediaId: number
@@ -43,7 +44,10 @@ export function BrowsePage() {
     <div className="min-h-screen flex flex-col">
       <Header type={type} onTypeChange={setType} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-5 sm:py-7 space-y-8">
-        <BrowseSearch type={type} onOpen={handleOpen} />
+        <div className="space-y-2">
+          <BrowseSearch type={type} onOpen={handleOpen} />
+          <UserListSearch type={type} />
+        </div>
 
         {isLoading ? (
           <SkeletonSections />

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Search } from 'lucide-react'
+import { ExternalLink, Search } from 'lucide-react'
 import type { MediaListEntry } from '@/lib/anilist/types'
 import { ALL_STATUSES, ALL_TABS, mediaTypeSlug, type ListTab } from '@/lib/media'
 import { sortEntries } from '@/lib/sort'
@@ -14,6 +14,7 @@ import { SortControl } from '@/components/SortControl'
 import { DateViewToggle } from '@/components/DateViewToggle'
 import { MediaGrid } from '@/components/MediaGrid'
 import { ListEditorModal } from '@/components/ListEditorModal'
+import { BrowseEditorModal } from '@/components/BrowseEditorModal'
 import { ErrorState } from '@/components/ErrorState'
 import { Input } from '@/components/ui/input'
 
@@ -31,6 +32,7 @@ function matchesSearch(entry: MediaListEntry, query: string): boolean {
 export function ListPage() {
   const { isAuthenticated } = useAuth()
   const {
+    username,
     type,
     tab,
     sort,
@@ -43,8 +45,15 @@ export function ListPage() {
     setCompact,
     applyToAllTabs,
   } = useListParams()
-  const { entries: allEntries, byStatus, isLoading, isError, error, refetch } = useMediaList(type)
+  const isOtherUser = !!username
+  const { entries: allEntries, byStatus, isLoading, isError, error, refetch } = useMediaList(
+    type,
+    username,
+  )
+  // Self mode edits by entry id (ListEditorModal); other-user mode edits YOUR
+  // own entry by media id (BrowseEditorModal), so it tracks two open targets.
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingMediaId, setEditingMediaId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
 
   useEffect(() => { setSearch('') }, [type])
@@ -86,15 +95,47 @@ export function ListPage() {
     [editingId, entries],
   )
 
-  const openEntry = useCallback((entry: MediaListEntry) => setEditingId(entry.id), [])
-  const closeEntry = useCallback(() => setEditingId(null), [])
+  const openEntry = useCallback(
+    (entry: MediaListEntry) => {
+      if (isOtherUser) setEditingMediaId(entry.mediaId)
+      else setEditingId(entry.id)
+    },
+    [isOtherUser],
+  )
+  const closeEntry = useCallback(() => {
+    setEditingId(null)
+    setEditingMediaId(null)
+  }, [])
 
-  if (!isAuthenticated) return <Navigate to={`/${mediaTypeSlug(type)}/browse`} replace />
+  const navMedia = useMemo(() => entries.map((e) => e.media), [entries])
+
+  // Anonymous users may view any public list, but a signed-out user has no
+  // own list to land on — send them to browse.
+  if (!isOtherUser && !isAuthenticated)
+    return <Navigate to={`/${mediaTypeSlug(type)}/browse`} replace />
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header type={type} onTypeChange={setType} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 sm:px-6 py-5 sm:py-7">
+        {isOtherUser && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
+            <p className="text-sm">
+              Viewing{' '}
+              <span className="font-semibold">{username}</span>
+              <span className="text-muted-foreground">’s list</span>
+            </p>
+            <a
+              href={`https://anilist.co/user/${username}/animelist`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Open on AniList
+              <ExternalLink className="size-3" />
+            </a>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <StatusTabs tab={tab} type={type} counts={counts} onChange={setTab} />
           <div className="flex items-center gap-2">
@@ -127,7 +168,11 @@ export function ListPage() {
         {isLoading ? (
           <SkeletonGrid />
         ) : isError ? (
-          <ErrorState error={error} message="Couldn't load your list." onRetry={() => refetch()} />
+          <ErrorState
+            error={error}
+            message={isOtherUser ? "Couldn't load this list. It may be private or not exist." : "Couldn't load your list."}
+            onRetry={() => refetch()}
+          />
         ) : (
           <MediaGrid
             entries={entries}
@@ -140,12 +185,21 @@ export function ListPage() {
         )}
       </main>
 
-      <ListEditorModal
-        entry={editingEntry}
-        entries={entries}
-        onNavigate={setEditingId}
-        onClose={closeEntry}
-      />
+      {isOtherUser ? (
+        <BrowseEditorModal
+          mediaId={editingMediaId}
+          navList={navMedia}
+          onNavigate={setEditingMediaId}
+          onClose={closeEntry}
+        />
+      ) : (
+        <ListEditorModal
+          entry={editingEntry}
+          entries={entries}
+          onNavigate={setEditingId}
+          onClose={closeEntry}
+        />
+      )}
     </div>
   )
 }
