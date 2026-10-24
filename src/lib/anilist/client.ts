@@ -38,7 +38,7 @@ export async function anilistRequest<T = unknown>(
     return await client.request<T>(document, variables)
   } catch (err: unknown) {
     const status = (err as { response?: { status?: number } })?.response?.status
-    if (status === 401 || status === 400) {
+    if (status === 401) {
       clearToken()
       throw new AnilistAuthError()
     }

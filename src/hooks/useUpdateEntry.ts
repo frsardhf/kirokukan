@@ -74,9 +74,13 @@ export function useUpdateEntry() {
         mediaId: input.entry.mediaId,
         status: input.status ?? input.entry.status,
         progress: input.progress ?? input.entry.progress,
-        progressVolumes: input.progressVolumes ?? input.entry.progressVolumes,
         startedAt: fuzzyToInput(input.startedAt ?? input.entry.startedAt),
         completedAt: fuzzyToInput(input.completedAt ?? input.entry.completedAt),
+      }
+      // AniList can return null volume progress. Only send an explicit manga
+      // volume edit; episode/chapter shortcuts should leave it untouched.
+      if (input.entry.media.type === 'MANGA' && input.progressVolumes != null) {
+        variables.progressVolumes = input.progressVolumes
       }
       if (!isCreate) variables.id = input.entry.id
       const data = await anilistRequest<Response>(SAVE_MEDIA_LIST_ENTRY_MUTATION, variables)
